@@ -33,7 +33,8 @@ void help_message() { fatal("TODO: write help message\n"); }
       fatal(message);                                                          \
   } while (0)
 
-void parse_argv(int *argc, char ***argv, struct ServerSettings *settings) {
+void parse_argv(int *argc, char ***argv, struct ServerSettings *settings) 
+{
   while (*argc) {
     if (!strcmp(**argv, "-h") || !strcmp(**argv, "--help")) {
       help_message();
@@ -65,13 +66,13 @@ void parse_argv(int *argc, char ***argv, struct ServerSettings *settings) {
       }
       logging_add_fd(fd);
     } else {
-      struct ServerResourceMonitor ssm;
-      if (stat(**argv, &ssm.stat) != 0) {
+      struct ServerResourceMonitor sr;
+      if (stat(**argv, &sr.stat) != 0) {
         fatal("args: couldn't find given path `%s`", **argv);
       }
 
-      ssm.path = **argv;
-      dequeue_append(&(settings->resources), &ssm,
+      sr.path = **argv;
+      dequeue_append(&(settings->resources), &sr,
                      sizeof(struct ServerResourceMonitor));
     }
 
@@ -80,13 +81,15 @@ void parse_argv(int *argc, char ***argv, struct ServerSettings *settings) {
   }
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv) 
+{
   struct ServerSettings settings = server_default_settings();
   argc--;
   argv++;
 
   logging_init();
   logging_add_fd(STDOUT_FILENO);
+
   parse_argv(&argc, &argv, &settings);
   return server_run(&settings);
 }

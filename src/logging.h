@@ -8,19 +8,19 @@
 
 // logging helper macros
 #define log_debug(fmt, ...)                                                    \
-  logging_print(LOG_DEBUG, fmt "\n" __VA_OPT__(, ) __VA_ARGS__)
+  logging_print(LOG_DEBUG, fmt "\n" __VA_OPT__(,) __VA_ARGS__)
 #define log_info(fmt, ...)                                                     \
-  logging_print(LOG_INFO, fmt "\n" __VA_OPT__(, ) __VA_ARGS__)
+  logging_print(LOG_INFO, fmt "\n" __VA_OPT__(,) __VA_ARGS__)
 #define log_warning(fmt, ...)                                                  \
-  logging_print(LOG_WARNING, fmt "\n" __VA_OPT__(, ) _ __VA_ARGS__)
-#define log_ERROR(fmt, ...)                                                    \
-  logging_print(LOG_ERROR, fmt "\n" __VA_OPT__(, ) __VA_ARGS__)
+  logging_print(LOG_WARNING, fmt "\n" __VA_OPT__(,) __VA_ARGS__)
+#define log_error(fmt, ...)                                                    \
+  logging_print(LOG_ERROR, fmt "\n" __VA_OPT__(,) __VA_ARGS__)
 #define log_critical(fmt, ...)                                                 \
-  logging_print(LOG_CRITICAL, fmt "\n" __VA_OPT__(, ) __VA_ARGS__)
+  logging_print(LOG_CRITICAL, fmt "\n" __VA_OPT__(,) __VA_ARGS__)
 
 #define fatal(fmt, ...)                                                        \
   do {                                                                         \
-    logging_print(LOG_CRITICAL, fmt "\n" __VA_OPT__(, ) __VA_ARGS__);          \
+    logging_print(LOG_CRITICAL, fmt "\n" __VA_OPT__(,) __VA_ARGS__);          \
     exit(1);                                                                   \
   } while (0)
 

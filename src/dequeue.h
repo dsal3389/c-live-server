@@ -7,11 +7,11 @@ typedef struct _node {
   struct _node *prev;
   struct _node *next;
   void *value;
-} _dequeue_node;
+} dequeue_node_t;
 
 typedef struct _dequeue {
-  _dequeue_node *head;
-  _dequeue_node *tail;
+  dequeue_node_t *head;
+  dequeue_node_t *tail;
   size_t length;
 } dequeue_t;
 

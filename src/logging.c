@@ -2,19 +2,22 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include "logging.h"
 
 // TODO: make thread safe
 struct LoggingSettings loggingSettings;
 
-void logging_init() {
+void logging_init() 
+{
   memset(&loggingSettings.fds, -1, sizeof(loggingSettings.fds));
   loggingSettings.level = LOG_INFO;
   loggingSettings.fd_count = 0;
 }
 
-void logging_print(enum LoggingLevel level, const char *fmt, ...) {
+void logging_print(enum LoggingLevel level, const char *fmt, ...) 
+{
   if (level < loggingSettings.level) {
     return;
   }
@@ -27,17 +30,26 @@ void logging_print(enum LoggingLevel level, const char *fmt, ...) {
   int buffer_size = vsnprintf(buffer, sizeof(buffer), fmt, args);
   va_end(args);
 
-  // TODO: make thread safe
+  static pthread_mutex_t write_lock = PTHREAD_MUTEX_INITIALIZER;
+
+  pthread_mutex_lock(&write_lock);
   for (int i = 0; i < loggingSettings.fd_count; i++) {
     write(loggingSettings.fds[i], buffer, buffer_size);
   }
+  pthread_mutex_unlock(&write_lock);
 }
 
-void logging_set_level(enum LoggingLevel level) {
+// this function is should not be called from a thread that
+// is not the main thread
+void logging_set_level(enum LoggingLevel level) 
+{
   loggingSettings.level = level;
 }
 
-void logging_add_fd(int fd) {
+// this function is should not be called from a thread that
+// is not the main thread
+void logging_add_fd(int fd) 
+{
   if (loggingSettings.fd_count >= LOGGING_MAX_FDS) {
     fatal("attempt to add more logging files then possible, max possible files "
           "are %d",
