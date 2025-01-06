@@ -1,6 +1,9 @@
+#include <unistd.h>
+#include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
 
+#include "thread_queue.h"
 #include "dequeue.h"
 #include "logging.h"
 #include "server.h"
@@ -64,11 +67,43 @@ void monitor_resources(dequeue_t *resources)
   }
 }
 
+void *listen_for_items(void *arg) {
+  threadq_queue_t *tq = arg;
+  int *item;
 
-int server_run(struct ServerSettings *settings) 
+  for(;;) {
+    item = (int *) threadq_get(tq);
+    printf("thread got item %d\n", *item);
+  }
+  return NULL;
+}
+
+void start_thread()
+{
+  threadq_queue_t tq;
+  threadq_init(&tq);
+
+  for(int i = 0; i < 5; i++) {
+    pthread_t thread;
+    pthread_create(&thread, NULL, listen_for_items, &tq);
+  }
+
+  for(int y = 0; y < 16; y++) {
+    threadq_put(&tq, &y, sizeof(int));
+    sleep(2);
+  }
+}
+
+void server_loop(const char *hostname, int port)
+{
+  
+}
+
+int server_start(struct ServerSettings *settings) 
 {
   server_validate_resources(&(settings->resources));
   monitor_resources(&(settings->resources));
+  start_thread();
   log_info("server started at %s:%d", settings->hostname, settings->port);
   return 0;
 }

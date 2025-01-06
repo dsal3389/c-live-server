@@ -18,7 +18,7 @@ struct ServerSettings {
 };
 
 struct ServerSettings server_default_settings();
-int server_run(struct ServerSettings *);
+int server_start(struct ServerSettings *);
 
 
 #endif

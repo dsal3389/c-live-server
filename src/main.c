@@ -91,5 +91,5 @@ int main(int argc, char **argv)
   logging_add_fd(STDOUT_FILENO);
 
   parse_argv(&argc, &argv, &settings);
-  return server_run(&settings);
+  return server_start(&settings);
 }

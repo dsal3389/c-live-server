@@ -29,6 +29,27 @@ void dequeue_append(dequeue_t *q, void *item, size_t size)
   q->length++;
 }
 
+// returned itme should be freed and check
+// if returned item pointer is not NULL
+void *dequeue_pop_left(dequeue_t *q)
+{
+  if (q->head == NULL) {
+    return NULL;
+  }
+
+  dequeue_node_t *node = q->head;
+  q->head = node->next;
+  q->length--;
+
+  if (q->tail == node) {
+    q->tail = NULL;
+  }
+
+  void *value = node->value;
+  free(node);
+  return value;
+}
+
 void dequeue_free(dequeue_t *q) 
 {
   dequeue_node_t *n = q->head;

@@ -17,6 +17,7 @@ typedef struct _dequeue {
 
 void dequeue_init(dequeue_t *);
 void dequeue_append(dequeue_t *, void *, size_t);
+void *dequeue_pop_left(dequeue_t *);
 void dequeue_free(dequeue_t *);
 
 #endif
