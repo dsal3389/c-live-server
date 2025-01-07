@@ -40,8 +40,8 @@ struct LoggingSettings {
   // will be written to, since 0 is a valid file descriptor, if the
   // field encounters -1, the logging should stop iterating over the list
   // so this list is `-1` terminating
-  int fds[LOGGING_MAX_FDS];
   size_t fd_count;
+  int fds[LOGGING_MAX_FDS];
 };
 
 extern struct LoggingSettings loggingSettings;

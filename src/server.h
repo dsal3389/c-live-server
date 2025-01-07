@@ -12,13 +12,13 @@ struct ServerResourceMonitor {
 
 struct ServerSettings {
   int port;
-  int thread_count;
+  int worker_count;
   char *hostname;
   dequeue_t resources; // dequeue of struct ServerResouceMonitor
 };
 
 struct ServerSettings server_default_settings();
-int server_start(struct ServerSettings *);
+void server_start(struct ServerSettings *);
 
 
 #endif

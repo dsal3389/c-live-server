@@ -6,7 +6,6 @@
 
 #include "logging.h"
 
-// TODO: make thread safe
 struct LoggingSettings loggingSettings;
 
 void logging_init() 

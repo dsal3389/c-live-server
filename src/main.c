@@ -14,9 +14,10 @@
 int ascii_number(const char *s) {
   const char *c = s;
   while (*c) {
-    if (!isdigit(*c++)) {
+    if (!isdigit(*c)) {
       return 0;
     }
+    c++;
   }
   return 1;
 }
@@ -47,9 +48,16 @@ void parse_argv(int *argc, char ***argv, struct ServerSettings *settings)
           "args: --port requires port value as next argument");
 
       if (!ascii_number(**argv)) {
-        fatal("args: given port `%s` doesn't contain valid numbers", **argv);
+        fatal("args: given port `%s` is not a valid number", **argv);
       }
       settings->port = atoi(**argv);
+    } else if (!strcmp(**argv, "-w") || !strcmp(**argv, "--workers")) {
+      parse_argv_require_flag_value("args: --workers expected a number");
+
+      if(!ascii_number(**argv)) {
+        fatal("args: given worker `%s` is not a valid number", **argv);
+      }
+      settings->worker_count = atoi(**argv);
     } else if (!strcmp(**argv, "-v") || !strcmp(**argv, "--debug")) {
       logging_set_level(LOG_DEBUG);
     } else if (!strcmp(**argv, "-q") || !strcmp(**argv, "--quite")) {
@@ -66,6 +74,10 @@ void parse_argv(int *argc, char ***argv, struct ServerSettings *settings)
       }
       logging_add_fd(fd);
     } else {
+      if (***argv == '-') {
+        fatal("args: unknown flag `%s`", **argv);
+      }
+
       struct ServerResourceMonitor sr;
       if (stat(**argv, &sr.stat) != 0) {
         fatal("args: couldn't find given path `%s`", **argv);
@@ -91,5 +103,6 @@ int main(int argc, char **argv)
   logging_add_fd(STDOUT_FILENO);
 
   parse_argv(&argc, &argv, &settings);
-  return server_start(&settings);
+  server_start(&settings);
+  return 0;
 }
