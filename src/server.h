@@ -18,6 +18,9 @@ struct ServerSettings {
 };
 
 struct ServerSettings server_default_settings();
+
+// start the dev server loop and resource monitoring
+// with the given settings
 void server_start(struct ServerSettings *);
 
 

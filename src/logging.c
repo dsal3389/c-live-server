@@ -6,7 +6,7 @@
 
 #include "logging.h"
 
-struct LoggingSettings loggingSettings;
+struct LoggingSettings loggingSettings = LOGGING_DEFAULT_INIT;
 
 void logging_init() 
 {

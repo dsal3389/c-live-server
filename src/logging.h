@@ -5,6 +5,7 @@
 
 #define LOGGING_MAX_FDS 16
 #define LOGGING_MAX_LINE_BUFFER 1024
+#define LOGGING_DEFAULT_INIT { .level = LOG_INFO, .fd_count = 0, .fds = {} }
 
 // logging helper macros
 #define log_debug(fmt, ...)                                                    \
@@ -46,9 +47,13 @@ struct LoggingSettings {
 
 extern struct LoggingSettings loggingSettings;
 
-void logging_init();
+// add file descriptor for the logger to write to
 void logging_add_fd(int);
+
+// set the logging level
 void logging_set_level(enum LoggingLevel);
+
+// write log message in the given level
 void logging_print(enum LoggingLevel, const char *, ...);
 
 #endif

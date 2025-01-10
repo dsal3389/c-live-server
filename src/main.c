@@ -99,7 +99,8 @@ int main(int argc, char **argv)
   argc--;
   argv++;
 
-  logging_init();
+  // add the standard output to the
+  // logging destination
   logging_add_fd(STDOUT_FILENO);
 
   parse_argv(&argc, &argv, &settings);

@@ -50,6 +50,17 @@ void *dequeue_pop_left(dequeue_t *q)
   return value;
 }
 
+void *dequeue_pop_left_b(dequeue_t *q, void *buffer, size_t size) {
+  void *item = dequeue_pop_left(q);
+  if(item == NULL) {
+    return NULL;
+  }
+
+  memcpy(buffer, item, size);
+  free(item);
+  return buffer;
+}
+
 void dequeue_free(dequeue_t *q) 
 {
   dequeue_node_t *n = q->head;

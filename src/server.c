@@ -1,5 +1,3 @@
-#include <unistd.h>
-#include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
@@ -15,10 +13,31 @@ struct WorkerArgs {
   threadq_queue_t *tq;
 };
 
-struct WorkerQueuedConnection {
+// defines worker connkection item data
+// this is used when there is new connection for the worker to handle
+struct WorkerConnection {
   int fd;
   struct sockaddr_in addr;
   socklen_t addr_len;
+};
+
+// union that holds all variants 
+// of the worker events
+union WorkerData {
+  struct WorkerConnection conn;
+};
+
+enum WorkerItemVariant {
+  WORKER_CONNECTION_ITEM,
+  WOKRER_FILE_ITEM
+};
+
+// the queued item that is pushed to the queue,
+// the worker first verify what is the `variant`
+// and based on that access the correct field in the enum
+struct WorkerQueuedItem {
+  enum WorkerItemVariant variant;
+  union WorkerData data;
 };
 
 __attribute__((always_inline)) inline struct ServerSettings server_default_settings() 
@@ -103,11 +122,18 @@ void monitor_resources(dequeue_t *resources)
 void *worker_loop(void *args)
 {
   struct WorkerArgs *wa = args;
+  struct WorkerQueuedItem item_buffer;
+
   log_debug("worker thread `%d` started", wa->id);
 
   for(;;) {
-    struct WorkerQueuedConnection *connection = threadq_get(wa->tq);
-    log_info("thread %d is handling a connection", wa->id);
+    struct WorkerQueuedItem *item = threadq_get(wa->tq, &item_buffer, sizeof(item_buffer));
+
+    if (item->variant == WORKER_CONNECTION_ITEM) {
+      log_info("thread %d is handling a connection, socket fd %d", wa->id, item->data.conn.fd);
+    } else {
+      log_error("unexpecte variant recved");
+    }
   }
 }
 
@@ -130,11 +156,11 @@ void server_start_workers(pthread_t *worker_buff, int count, threadq_queue_t *qu
   }
 }
 
-void server_loop(struct ServerSettings *settings, threadq_queue_t *requests_queue) 
+void server_loop(struct ServerSettings *settings, threadq_queue_t *queue) 
 {
   int sockfd = server_create_socket(settings->hostname, settings->port);
 
-  struct WorkerQueuedConnection connection;
+  struct WorkerConnection connection;
   connection.fd = 0;
   connection.addr_len = sizeof(connection.addr);
 
@@ -149,19 +175,23 @@ void server_loop(struct ServerSettings *settings, threadq_queue_t *requests_queu
       continue;
     }
 
+    struct WorkerQueuedItem item;
+    item.variant = WORKER_CONNECTION_ITEM;
+    memcpy(&item.data.conn, &connection, sizeof(connection));
+
     // the item will be copied to the queue 
     // so we can just reuse the same variable
-    threadq_put(requests_queue, &connection, sizeof(struct WorkerQueuedConnection));
+    threadq_put(queue, &item, sizeof(item));
   }
 }
 
 void server_start(struct ServerSettings *settings) 
 {
   pthread_t workers[settings->worker_count];
-  threadq_queue_t requests_queue;
-  threadq_init(&requests_queue);
+  threadq_queue_t queue;
+  threadq_init(&queue);
 
   server_validate_resources(&(settings->resources));
-  server_start_workers(workers, settings->worker_count, &requests_queue);
-  server_loop(settings, &requests_queue);
+  server_start_workers(workers, settings->worker_count, &queue);
+  server_loop(settings, &queue);
 }

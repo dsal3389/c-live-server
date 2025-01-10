@@ -11,7 +11,7 @@ void threadq_init(threadq_queue_t *tq)
   dequeue_init(&tq->dequeue);
 }
 
-void *threadq_get(threadq_queue_t *tq)
+void *threadq_get(threadq_queue_t *tq, void *buffer, size_t size)
 {
   int s = pthread_mutex_lock(&tq->lock);
   
@@ -22,7 +22,7 @@ void *threadq_get(threadq_queue_t *tq)
     pthread_cond_wait(&tq->cond, &tq->lock);
   }
 
-  void *item = dequeue_pop_left(&tq->dequeue);
+  void *item = dequeue_pop_left_b(&tq->dequeue, buffer, size);
   s = pthread_mutex_unlock(&tq->lock);
   return item;
 }
