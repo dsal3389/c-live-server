@@ -31,11 +31,15 @@ void logging_print(enum LoggingLevel level, const char *fmt, ...)
 
   static pthread_mutex_t write_lock = PTHREAD_MUTEX_INITIALIZER;
 
-  pthread_mutex_lock(&write_lock);
+  if (pthread_mutex_lock(&write_lock) != 0) {
+    fatal_with_errno("logging", "lock returned an error when tried to lock for write");
+  }
   for (int i = 0; i < loggingSettings.fd_count; i++) {
     write(loggingSettings.fds[i], buffer, buffer_size);
   }
-  pthread_mutex_unlock(&write_lock);
+  if (pthread_mutex_unlock(&write_lock) != 0) {
+    fatal_with_errno("logging", "lock returned an error when tried to unlock for write");
+  }
 }
 
 // this function is should not be called from a thread that
@@ -50,7 +54,7 @@ void logging_set_level(enum LoggingLevel level)
 void logging_add_fd(int fd) 
 {
   if (loggingSettings.fd_count >= LOGGING_MAX_FDS) {
-    fatal("attempt to add more logging files then possible, max possible files "
+    fatal("logging", "attempt to add more logging files then possible, max possible files "
           "are %d",
           LOGGING_MAX_FDS);
   }

@@ -5,7 +5,9 @@
 
 #include "dequeue.h"
 
-struct ServerResourceMonitor {
+#define SERVER_MAX_CONNECTIONS 16
+
+struct ServerResource {
   const char *path;
   struct stat stat;
 };

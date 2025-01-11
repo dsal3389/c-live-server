@@ -1,5 +1,5 @@
 
-CC=gcc
+CC=clang
 C_FLAGS=-Wall -O3 -lpthread -o live-server.bin -g
 
 build: 

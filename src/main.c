@@ -22,7 +22,7 @@ int ascii_number(const char *s) {
   return 1;
 }
 
-void help_message() { fatal("TODO: write help message\n"); }
+void help_message() { fatal("main", "TODO: write help message\n"); }
 
 // a simple macro to move to the next flag, and check that there is a next flag
 // if there are no more arguments, we exit with given error message
@@ -31,7 +31,7 @@ void help_message() { fatal("TODO: write help message\n"); }
     (*argc)--;                                                                 \
     (*argv)++;                                                                 \
     if (*argc == 0)                                                            \
-      fatal(message);                                                          \
+      fatal("args", message);                                                          \
   } while (0)
 
 void parse_argv(int *argc, char ***argv, struct ServerSettings *settings) 
@@ -41,21 +41,21 @@ void parse_argv(int *argc, char ***argv, struct ServerSettings *settings)
       help_message();
     } else if (!strcmp(**argv, "-h") || !strcmp(**argv, "--hostname")) {
       parse_argv_require_flag_value(
-          "args: --hostname requires hostname value as next argument");
+          "--hostname requires hostname value as next argument");
       settings->hostname = **argv;
     } else if (!strcmp(**argv, "-p") || !strcmp(**argv, "--port")) {
       parse_argv_require_flag_value(
-          "args: --port requires port value as next argument");
+          "--port requires port value as next argument");
 
       if (!ascii_number(**argv)) {
-        fatal("args: given port `%s` is not a valid number", **argv);
+        fatal("args", "given port `%s` is not a valid number", **argv);
       }
       settings->port = atoi(**argv);
     } else if (!strcmp(**argv, "-w") || !strcmp(**argv, "--workers")) {
-      parse_argv_require_flag_value("args: --workers expected a number");
+      parse_argv_require_flag_value("--workers expected a number");
 
       if(!ascii_number(**argv)) {
-        fatal("args: given worker `%s` is not a valid number", **argv);
+        fatal("args", "given worker `%s` is not a valid number", **argv);
       }
       settings->worker_count = atoi(**argv);
     } else if (!strcmp(**argv, "-v") || !strcmp(**argv, "--debug")) {
@@ -66,26 +66,26 @@ void parse_argv(int *argc, char ***argv, struct ServerSettings *settings)
       logging_set_level(LOG_WARNING);
     } else if (!strcmp(**argv, "-o") || !strcmp(**argv, "--output-log")) {
       parse_argv_require_flag_value(
-          "args: --output-log expected a path to a logfile");
+          "--output-log expected a path to a logfile");
 
       int fd = open(**argv, O_RDWR | O_CREAT | O_APPEND);
       if (fd == -1) {
-        fatal("args: failed to open/create file at path %s", **argv);
+        fatal_with_errno("args", "failed to open/create file at path %s", **argv);
       }
       logging_add_fd(fd);
     } else {
       if (***argv == '-') {
-        fatal("args: unknown flag `%s`", **argv);
+        fatal("args", "unknown flag `%s`", **argv);
       }
 
-      struct ServerResourceMonitor sr;
+      struct ServerResource sr;
       if (stat(**argv, &sr.stat) != 0) {
-        fatal("args: couldn't find given path `%s`", **argv);
+        fatal("args", "couldn't find given path `%s`", **argv);
       }
 
       sr.path = **argv;
       dequeue_append(&(settings->resources), &sr,
-                     sizeof(struct ServerResourceMonitor));
+                     sizeof(struct ServerResource));
     }
 
     (*argc)--;

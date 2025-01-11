@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 
+#include "logging.h"
 #include "dequeue.h"
 #include "thread_queue.h"
 
@@ -13,25 +14,32 @@ void threadq_init(threadq_queue_t *tq)
 
 void *threadq_get(threadq_queue_t *tq, void *buffer, size_t size)
 {
-  int s = pthread_mutex_lock(&tq->lock);
+  if (pthread_mutex_lock(&tq->lock) != 0) {
+    fatal_with_errno("thread-queue", "locking on `get` returned an error");
+  }
   
   // if there are no items on the queue
   // then wait for some event
   while (tq->dequeue.length == 0) {
-    // TODO: timeout and put inside a while loop
     pthread_cond_wait(&tq->cond, &tq->lock);
   }
 
   void *item = dequeue_pop_left_b(&tq->dequeue, buffer, size);
-  s = pthread_mutex_unlock(&tq->lock);
+  if (pthread_mutex_unlock(&tq->lock) != 0) {
+    fatal_with_errno("thread-queue", "unlocking on `get` returned an error");
+  }
   return item;
 }
 
 void threadq_put(threadq_queue_t *tq, void *item, size_t size)
 {
-  int s = pthread_mutex_lock(&tq->lock);
+  if (pthread_mutex_lock(&tq->lock) != 0) {
+    fatal_with_errno("thread-queue", "locking on `put` returned an error");
+  }
   dequeue_append(&tq->dequeue, item, size);
-  s = pthread_mutex_unlock(&tq->lock);
+  if (pthread_mutex_unlock(&tq->lock) != 0) {
+    fatal_with_errno("thread-queue", "unlocking on `put` returned an error");
+  }
   pthread_cond_signal(&tq->cond);
 }
 
