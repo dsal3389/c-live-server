@@ -59,10 +59,14 @@ __attribute__((always_inline)) int server_bind_and_listen(const char *hostname, 
   if (sockfd == -1) {
     fatal_with_errno("server", "couldn't create socket");
   }
+  if (fcntl(sockfd, F_SETFL, O_NONBLOCK) == -1) {
+    fatal_with_errno("server", "couldn't set nonblocking flag on socket fd");
+  }
 
   struct sockaddr_in server_addr;
   server_addr.sin_family = AF_INET;
-  server_addr.sin_addr.s_addr = inet_addr(hostname);
+  // server_addr.sin_addr.s_addr = inet_addr(hostname);
+  server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
   server_addr.sin_port = htons(port);
 
   if (bind(sockfd, (struct sockaddr *) &server_addr, sizeof(server_addr)) == -1) {
@@ -132,9 +136,16 @@ void server_preper_for_poll(struct pollfd *fds, dequeue_t *resources) {
   }
 }
 
-void server_handle_socket_event(int sockfd)
+void server_handle_socket_event(int sockfd, threadq_queue_t *queue)
 {
-  log_info("server", "socket event recv\n");
+  struct WorkerQueuedItem item;
+  struct WorkerConnection *conn = &item.data.conn;
+
+  item.variant = WORKER_CONNECTION_ITEM;
+  if((conn->fd = accept(sockfd, (struct sockaddr *) &conn->addr, &conn->addr_len)) == -1) {
+    fatal_with_errno("server", "accept");
+  }
+  threadq_put(queue, &item, sizeof(struct WorkerQueuedItem));
 }
 
 void *worker_loop(void *args)
@@ -180,40 +191,27 @@ void server_loop(struct ServerSettings *settings, threadq_queue_t *queue)
   int poll_ready = 0;
 
   // +1 for the socket fd
-  struct pollfd fds[settings->resources.length + 1];
+  nfds_t nfds = settings->resources.length + 1;
+  struct pollfd fds[nfds];
 
   // first pollfd is the server socket, always
-  struct pollfd sock_poll = fds[0];
-  sock_poll.events = POLLIN;
-  sock_poll.fd = server_bind_and_listen(settings->hostname, settings->port);
+  fds[0].events = POLLIN; //  | POLLHUP;
+  fds[0].fd = server_bind_and_listen(settings->hostname, settings->port);
 
   log_info("server", "running http://%s:%d", settings->hostname, settings->port);
-  server_preper_for_poll(&(fds[1]), &settings->resources);
+  // server_preper_for_poll(fds + 1, &settings->resources);
 
   for (;;) {
-    if (poll(fds, settings->resources.length, -1) == -1) {
+    if (poll(fds, 1, -1) == -1) {
       fatal_with_errno("server", "poll returned error");
     }
 
-    log_debug("server", "poll event recv sock fd %d, revents %d", sock_poll.fd, sock_poll.revents);
-    if (sock_poll.revents & POLLIN) {
-      server_handle_socket_event(sock_poll.fd);
+    log_debug("server", "event poll recv");
+
+    if (fds[0].revents & POLLIN) {
+      server_handle_socket_event(fds[0].fd, queue);
     }
   }
-
-  // for(;;) {
-  //   if((connection.fd = accept(sockfd, (struct sockaddr *) &connection.addr, &connection.addr_len)) == -1) {
-  //     continue;
-  //   }
-
-  //   struct WorkerQueuedItem item;
-  //   item.variant = WORKER_CONNECTION_ITEM;
-  //   memcpy(&item.data.conn, &connection, sizeof(connection));
-
-  //   // the item will be copied to the queue 
-  //   // so we can just reuse the same variable
-  //   threadq_put(queue, &item, sizeof(item));
-  // }
 }
 
 void server_start(struct ServerSettings *settings) 
